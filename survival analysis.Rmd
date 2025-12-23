@@ -2,4 +2,86 @@
 title: "survival analysis"
 output: html_document
 ---
+```{r}
+dataset <- read.csv("C:\\Users\\hasan\\Downloads\\archive\\veterans_lung_cancer_clinical_trial.csv.csv")
+dataset
+```
+#Kaplan–Meier survival curve comparing treatment groups
+```{r}
+library(survival)
+library(survminer)
 
+surv_data <- Surv(time =dataset$TIME, event = dataset$Y )
+km_fit <-  survfit(surv_data ~ trt,data = dataset)
+
+km_plot <- ggsurvplot(
+  km_fit, data= dataset, legend.title = "Treatment",
+  legend.labs = levels(as.factor(dataset$trt)),
+  xlab = "Time(days)",
+  ylab = "Suvival probability",
+  title = "KM-survival curves"
+  
+)
+km_plot
+```
+
+
+```{r}
+cox_model <- coxph(surv_data ~ trt + celltype + priortherapy, data = dataset)
+summary(cox_model)
+```
+#3- Interpret hazard ratios and confidence intervals.
+
+# Treatment predictors:
+- group1 : test
+- group2 : standard
+
+The patients that has test treatment an estimated 21.6% higher hazard of daeth than standard treatment.
+
+CI :  (0.8264  ,  1.7904)
+The patients that has test treatment has hazard of daeth at least 0.8264 but not more than 1.7904 
+
+
+# celltype predictors:
+baseline = adeno 
+
+1. large celltype
+
+The patients that has large cell an estimated more 41.52% higher hazard of daeth rathar adeno cell.
+
+CI :  (0.2325  ,  0.7415)
+The patients that has large cell has hazard of daeth at least 0.2325 but not more than 0.7415 
+
+2. smallcell celltype
+The patients that has smallcell  an estimated more 92.64% higher hazard of daeth rathar adeno cell.
+
+CI :  (0.5551  ,  1.5463)
+The patients that has smallcell has hazard of daeth at least 0.5551 but not more than  1.5463 
+
+
+3. squamous celltype
+squamous cell patients have about 69% lower hazard of death compared with adenocarcinoma patients.
+
+CI: (0.1713 ,   0.5550)
+The patients that has squamous cell has hazard of daeth at least 0.1713 but not more than  0.5550 
+
+
+# priortherapy:
+The patients that response priortherapy an estimated 3.03% higher hazard of daeth than response no.
+
+CI :  (0.145  ,0.88469)
+The patients that response priortherapy has hazard of daeth at least 0.145 but not more than 0.88469
+
+
+# Test proportional hazards assumptions 
+```{r}
+# Test proportional hazards assumptions using Schoenfeld residuals
+ph_test <- cox.zph(cox_model)
+print(ph_test)
+```
+
+Proportional hazards were assessed using Schoenfeld residuals. There was no evidence of non-proportionality for treatment (p = 0.35), but the global test indicated deviation from the proportional hazards assumption (GLOBAL p = 0.026), driven primarily by cell type (p = 0.024) and, to a lesser extent, prior therapy (p = 0.057).
+
+
+#Write a clinical-style interpretation of findings.
+Clinically, these findings imply that while the overall conclusion regarding lack of a clear survival benefit with the test treatment is likely robust, the prognostic impact of certain tumor cell types may change over time. Interpretations of hazard ratios for cell type should therefore recognize that they represent an average effect over the observed follow-up rather than a strictly time-invariant relationship.
